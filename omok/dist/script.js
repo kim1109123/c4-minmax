@@ -21,6 +21,7 @@ let game = {
 	player2: null,
 	board: [],
 	turn: 0,
+	heightState: []
 }
 let boardGrid = []
 
@@ -32,6 +33,7 @@ const info = []
 let map = new Array(6)
 for (let i = 0; i < 7; i++) {
 	map[i] = new Array(7)
+	game.heightState.push(BOARD_HEIGHT - 1)
 }
 // Functions to manage game
 const createBoard = () => {
@@ -55,6 +57,7 @@ const createBoard = () => {
 	boardGrid.forEach((row, rowNum) => {
 		row.forEach((square, colNum) => {
 			square.addEventListener('click', () => {
+				console.log('click', rowNum, colNum)
 				if (square.firstChild) return
 				let piece = document.createElement('img');
 				if (game.turn % 2 === 0) {
@@ -72,8 +75,10 @@ const createBoard = () => {
 					map[rowNum][colNum] = game.turn % 2
 					if (checkGame(rowNum, colNum, game.turn % 2) === true) {
 						alert(`user : ${game.turn % 2} victory`)
+						return
 					}
 					game.turn++
+					game.heightState[colNum]--
 				}
 				else {
 					let flag = false
@@ -93,11 +98,40 @@ const createBoard = () => {
 						map[rowNum][colNum] = game.turn % 2
 						if (checkGame(rowNum, colNum, game.turn % 2) === true) {
 							alert(`user : ${game.turn % 2} victory`)
+							return
 						}
 						game.turn++
+						game.heightState[colNum]--
+					}
+					else{
+						return
 					}
 				}
 
+				// bot's turn
+				let nowx, nowy;
+				do{
+					nowx = Math.floor(Math.random() * BOARD_WIDTH)
+				}while (game.heightState[nowx] === -1)
+				let ai_piece = document.createElement('img');
+				if (game.turn % 2 === 0) {
+					ai_piece.src = player1Piece
+				} else {
+					ai_piece.src = player2Piece
+				}
+				nowy = game.heightState[nowx]
+				boardGrid[nowy][nowx].appendChild(ai_piece);
+				info.push({
+					user: game.turn % 2,
+					y: nowy,
+					x: nowx
+				})
+				map[nowy][nowx] = game.turn % 2
+				if (checkGame(nowy, nowx, game.turn % 2) === true) {
+					alert(`user : ${game.turn % 2} victory`)
+				}
+				game.turn++
+				game.heightState[nowx]--
 			})
 		})
 	})
@@ -155,4 +189,21 @@ let EventNames = [
 	'moveData',
 ]
 
-// 히히힣ㅎ힣 
+
+const MAX_DEFTH = 6;
+
+
+const evaluate = (user) => { // 받은 판의 점수 계산
+	for (let i = 0; i < BOARD_WIDTH; i++){
+		for (let j = 0; j < BOARD_HEIGHT; j++){
+			
+		}
+	}
+}
+
+const choose = (now_board, user, cnt) => {
+    if (cnt === 0){
+        return evaluate(now_board, user);
+    }
+    
+}
