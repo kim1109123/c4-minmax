@@ -114,7 +114,7 @@ const createBoard = () => {
 				// 	nowx = Math.floor(Math.random() * BOARD_WIDTH)
 				// }while (game.heightState[nowx] === -1)
 				// x좌표 정하기
-				nowx = choose(1, MAX_DEFTH).x
+				nowx = choose(1, MAX_DEFTH, Infinity).x
 				// console.log(evaluate());
 				let ai_piece = document.createElement('img');
 				if (game.turn % 2 === 0) {
@@ -193,37 +193,67 @@ let EventNames = [
 ]
 
 
-const MAX_DEFTH = 5;
+const MAX_DEFTH = 8;
 
-
+var i;
 const evaluate = () => { // 받은 판의 점수 계산
 	let ans = [0, 0];
 	for (let i = 0; i < BOARD_WIDTH; i++){
 		for (let j = 0; j < BOARD_HEIGHT; j++){
 			if (map[i][j] === undefined)
 				continue;
-			if (!can(i - 1, j - 1, map[i][j]))
-				ans[map[i][j]] += (rd(i, j, map[i][j]) - 1) * 3
-			if (!can(i - 1, j, map[i][j]))
-				ans[map[i][j]] += (d(i, j, map[i][j]) - 1) * 3
-			if (!can(i + 1, j, map[i][j]))
-				ans[map[i][j]] += (ld(i, j, map[i][j]) - 1) * 3
-			if (!can(i, j - 1, map[i][j]))
-				ans[map[i][j]] += (r(i, j, map[i][j]) - 1) * 3
+			let got;
+			if (!can(i - 1, j - 1, map[i][j])){
+				got = rd(i, j, map[i][j])
+				if (i > 0 && j > 0 && map[i - 1][j - 1] === undefined)
+					ans[map[i][j]]++
+				if (i + got + 1 < BOARD_HEIGHT && j + got + 1 < BOARD_WIDTH && map[i + got + 1][j + got + 1] === map[i][j])
+					got += rd(i + got + 1, j + got + 1, map[i][j]);
+				ans[map[i][j]] += (got - 1) * 3
+			}
+			if (!can(i - 1, j, map[i][j])){
+				got = d(i, j, map[i][j])
+				if (i > 0 && map[i - 1][j] === undefined)
+					ans[map[i][j]]++
+				if (i + got + 1 < BOARD_HEIGHT && map[i + got + 1][j] === map[i][j])
+					got += d(i + got + 1, j, map[i][j]);
+				ans[map[i][j]] += (got - 1) * 3
+			}
+			if (!can(i - 1, j + 1, map[i][j])){
+				got = ld(i, j, map[i][j])
+				if (i > 0 && j < BOARD_WIDTH - 1 && map[i - 1][j + 1] === undefined)
+					ans[map[i][j]]++
+				if (i + got + 1 < BOARD_HEIGHT && j - got - 1 < BOARD_WIDTH && map[i + got + 1][j - got - 1] === map[i][j])
+					got += rd(i + got + 1, j - got - 1, map[i][j]);
+				ans[map[i][j]] += (got - 1) * 3
+			}
+			if (!can(i, j - 1, map[i][j])){
+				got = r(i, j, map[i][j])
+				if (i > 0 && map[i][j] === undefined)
+					ans[map[i][j]]++
+				if (j + got + 1 < BOARD_WIDTH && map[i][j + got + 1] === map[i][j])
+					got += r(i, j + got + 1, map[i][j]);
+				ans[map[i][j]] += (got - 1) * 3
+			}
 		}
 	}
 	return ans[1] - ans[0];
 }
 
-const choose = (user, cnt) => {
+const choose = (user, cnt, siblingWorst) => {
+	// console.log('choose')
     if (cnt === 0){
-        return evaluate();
+		const ret = evaluate();
+		// console.log(ret)
+        return ret;
 	}
-	let ansState, ansX = 4;
+	let ansState, ansX = 3;
+	let childBest;
 	if (user === 0)
 		ansState = Infinity
 	else
 		ansState = -Infinity
+	childBest = -ansState;
     for (let nowx = 0; nowx < BOARD_WIDTH; nowx++){
 		if (game.heightState[nowx] !== -1){
 			let nowy = game.heightState[nowx]--
@@ -237,22 +267,38 @@ const choose = (user, cnt) => {
 					return {state: Infinity, x: nowx}
 			}
 			if (user === 0){
-				const got = choose(1, cnt - 1).state
+				const got = choose(1, cnt - 1, childBest).state
 				if (got < ansState){
 					ansState = got
 					ansX = nowx
+					childBest = got;
+					if (ansState < siblingWorst) {
+						map[nowy][nowx] = undefined
+						game.heightState[nowx]++
+						// console.log('alphabeta')
+						return { state: ansState, x: nowx }
+					}
 				}
 			}
 			else{
-				const got = choose(0, cnt - 1).state
+				const got = choose(0, cnt - 1, childBest).state
 				if (got > ansState){
 					ansState = got
 					ansX = nowx
+					childBest = got;
+					if (ansState < siblingWorst) {
+						map[nowy][nowx] = undefined
+						game.heightState[nowx]++
+						// console.log('alphabeta')
+						return { state: ansState, x: nowx }
+					}
 				}
 			}
 			map[nowy][nowx] = undefined
 			game.heightState[nowx]++
+
 		}
 	}
+	// console.log(ansState)
 	return {state: ansState, x: ansX}
 }
