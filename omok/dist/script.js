@@ -109,13 +109,12 @@ const createBoard = () => {
 				}
 
 				// bot's turn
-				let nowx, nowy;
+				let nowx = 3, nowy;
 				// do{
 				// 	nowx = Math.floor(Math.random() * BOARD_WIDTH)
 				// }while (game.heightState[nowx] === -1)
 				// x좌표 정하기
 				nowx = choose(1, MAX_DEFTH).x
-				
 				// console.log(evaluate());
 				let ai_piece = document.createElement('img');
 				if (game.turn % 2 === 0) {
@@ -194,7 +193,7 @@ let EventNames = [
 ]
 
 
-const MAX_DEFTH = 2;
+const MAX_DEFTH = 5;
 
 
 const evaluate = () => { // 받은 판의 점수 계산
@@ -220,21 +219,22 @@ const choose = (user, cnt) => {
     if (cnt === 0){
         return evaluate();
 	}
-	let ansState, ansX = 3;
+	let ansState, ansX = 4;
 	if (user === 0)
 		ansState = Infinity
 	else
 		ansState = -Infinity
-	console.log(cnt, map)
     for (let nowx = 0; nowx < BOARD_WIDTH; nowx++){
 		if (game.heightState[nowx] !== -1){
 			let nowy = game.heightState[nowx]--
 			map[nowy][nowx] = user
 			if (checkGame(nowy, nowx, user)) {
+				map[nowy][nowx] = undefined
+				game.heightState[nowx]++
 				if (user === 0)
-					return -Infinity
+					return {state: -Infinity, x: nowx}
 				else
-					return Infinity
+					return {state: Infinity, x: nowx}
 			}
 			if (user === 0){
 				const got = choose(1, cnt - 1).state
@@ -254,6 +254,5 @@ const choose = (user, cnt) => {
 			game.heightState[nowx]++
 		}
 	}
-	// console.log(user, cnt, ansState, ansX)
 	return {state: ansState, x: ansX}
 }
