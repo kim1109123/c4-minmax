@@ -110,9 +110,13 @@ const createBoard = () => {
 
 				// bot's turn
 				let nowx, nowy;
-				do{
-					nowx = Math.floor(Math.random() * BOARD_WIDTH)
-				}while (game.heightState[nowx] === -1)
+				// do{
+				// 	nowx = Math.floor(Math.random() * BOARD_WIDTH)
+				// }while (game.heightState[nowx] === -1)
+				// x좌표 정하기
+				nowx = choose(1, MAX_DEFTH).x
+				
+				// console.log(evaluate());
 				let ai_piece = document.createElement('img');
 				if (game.turn % 2 === 0) {
 					ai_piece.src = player1Piece
@@ -190,20 +194,66 @@ let EventNames = [
 ]
 
 
-const MAX_DEFTH = 6;
+const MAX_DEFTH = 2;
 
 
-const evaluate = (user) => { // 받은 판의 점수 계산
+const evaluate = () => { // 받은 판의 점수 계산
+	let ans = [0, 0];
 	for (let i = 0; i < BOARD_WIDTH; i++){
 		for (let j = 0; j < BOARD_HEIGHT; j++){
-			
+			if (map[i][j] === undefined)
+				continue;
+			if (!can(i - 1, j - 1, map[i][j]))
+				ans[map[i][j]] += (rd(i, j, map[i][j]) - 1) * 3
+			if (!can(i - 1, j, map[i][j]))
+				ans[map[i][j]] += (d(i, j, map[i][j]) - 1) * 3
+			if (!can(i + 1, j, map[i][j]))
+				ans[map[i][j]] += (ld(i, j, map[i][j]) - 1) * 3
+			if (!can(i, j - 1, map[i][j]))
+				ans[map[i][j]] += (r(i, j, map[i][j]) - 1) * 3
 		}
 	}
+	return ans[1] - ans[0];
 }
 
-const choose = (now_board, user, cnt) => {
+const choose = (user, cnt) => {
     if (cnt === 0){
-        return evaluate(now_board, user);
-    }
-    
+        return evaluate();
+	}
+	let ansState, ansX = 3;
+	if (user === 0)
+		ansState = Infinity
+	else
+		ansState = -Infinity
+	console.log(cnt, map)
+    for (let nowx = 0; nowx < BOARD_WIDTH; nowx++){
+		if (game.heightState[nowx] !== -1){
+			let nowy = game.heightState[nowx]--
+			map[nowy][nowx] = user
+			if (checkGame(nowy, nowx, user)) {
+				if (user === 0)
+					return -Infinity
+				else
+					return Infinity
+			}
+			if (user === 0){
+				const got = choose(1, cnt - 1).state
+				if (got < ansState){
+					ansState = got
+					ansX = nowx
+				}
+			}
+			else{
+				const got = choose(0, cnt - 1).state
+				if (got > ansState){
+					ansState = got
+					ansX = nowx
+				}
+			}
+			map[nowy][nowx] = undefined
+			game.heightState[nowx]++
+		}
+	}
+	// console.log(user, cnt, ansState, ansX)
+	return {state: ansState, x: ansX}
 }
